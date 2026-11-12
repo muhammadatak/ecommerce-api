@@ -1,0 +1,12 @@
+package dto
+
+type CartItemData struct {
+	Id string `json:"id"`
+	ProductData
+	Quantity int `json:"quantity"`
+}
+
+type CartData struct {
+	Id       string         `json:"id"`
+	CartItem []CartItemData `json:"cart_item"`
+}
