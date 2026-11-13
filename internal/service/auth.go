@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/muhammadatak/go-ecommerce-api/domain"
 	"github.com/muhammadatak/go-ecommerce-api/dto"
 	"github.com/muhammadatak/go-ecommerce-api/internal/config"

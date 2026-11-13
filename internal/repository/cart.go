@@ -26,8 +26,8 @@ func (c *cartRepository) FindAll(ctx context.Context) ([]domain.Cart, error) {
 }
 
 // FindById implements [domain.CartRepository].
-func (c *cartRepository) FindById(ctx context.Context, id string) (domain.Cart, error) {
-	dataset := c.db.From("carts").Where(goqu.C("id").Eq(id))
+func (c *cartRepository) FindByUserId(ctx context.Context, userId string) (domain.Cart, error) {
+	dataset := c.db.From("carts").Where(goqu.C("user_id").Eq(userId))
 	var result domain.Cart
 	_, err := dataset.ScanStructContext(ctx, &result)
 	if err != nil {

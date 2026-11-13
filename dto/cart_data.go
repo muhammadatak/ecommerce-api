@@ -1,9 +1,9 @@
 package dto
 
 type CartItemData struct {
-	Id string `json:"id"`
-	ProductData
-	Quantity int `json:"quantity"`
+	Id       string      `json:"id"`
+	Product  ProductData `json:"product"`
+	Quantity int         `json:"quantity"`
 }
 
 type CartData struct {

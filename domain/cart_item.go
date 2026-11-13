@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 	"database/sql"
+
+	"github.com/muhammadatak/go-ecommerce-api/dto"
 )
 
 type CartItem struct {
@@ -15,5 +17,10 @@ type CartItem struct {
 }
 
 type CartItemRepository interface {
-	FindAll(ctx context.Context) ([]CartItem, error)
+	FindByCartId(ctx context.Context, cartId string) ([]CartItem, error)
+	Save(ctx context.Context, item CartItem) error
+}
+
+type CartItemService interface {
+	Create(ctx context.Context, item dto.CreateItemRequest) error
 }

@@ -28,12 +28,16 @@ func main() {
 	//repository
 	userRepos := repository.NewUser(dbConn)
 	productRepository := repository.NewProduct(dbConn)
+	cartRepos := repository.NewCart(dbConn)
+	cartItemRepos := repository.NewCartItem(dbConn)
 
 	//service
 	authRepos := service.NewAuth(userRepos, cnf)
 	productService := service.NewProduct(productRepository)
-
+	cartService := service.NewCart(cartRepos, productRepository, cartItemRepos)
+	cartItemService := service.NewCartItem(cartItemRepos, cartRepos, productRepository)
 	//api
+	api.NewCart(app, cartService, cartItemService, jwtMidd)
 	api.NewProduct(app, productService, jwtMidd)
 	api.NewAuth(app, authRepos)
 
