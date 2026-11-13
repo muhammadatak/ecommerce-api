@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -30,14 +29,14 @@ func (aa authApi) Login(ctx fiber.Ctx) error {
 
 	err := ctx.Bind().Body(&req)
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 
 	res, err := aa.authService.Login(c, req)
 
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 

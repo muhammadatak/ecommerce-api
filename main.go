@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	jwtware "github.com/gofiber/contrib/v3/jwt"
@@ -40,6 +41,6 @@ func main() {
 	api.NewProduct(app, productService, jwtMidd)
 	api.NewAuth(app, authRepos)
 
-	_ = app.Listen(cnf.Server.Host + ":" + cnf.Server.Port)
+	log.Fatal(app.Listen(cnf.Server.Host + ":" + cnf.Server.Port))
 
 }

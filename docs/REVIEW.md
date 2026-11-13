@@ -6,7 +6,7 @@ Yang sudah bagus: lapisan domain → repository → service → api terpisah, de
 
 ## Status progres (update terakhir)
 
-Dicek terhadap commit `9ba22bc` ditambah perubahan yang belum di-commit. `go build` dan `go vet` lolos.
+Dicek terhadap commit `829b9e2` ditambah perubahan yang belum di-commit. `go build` dan `go vet` lolos.
 
 ### ✅ Sudah dikerjakan
 
@@ -21,16 +21,24 @@ Dicek terhadap commit `9ba22bc` ditambah perubahan yang belum di-commit. `go bui
 | A | `IN ()` saat cart kosong | `Show` sekarang return lebih awal kalau `len(cartItems) == 0`. |
 | B | Cek stok kumulatif | `FindByCartAndProduct` mengambil quantity yang sudah ada di cart, lalu yang dicek `req.Quantity + item.Quantity > product.Stock`. Item yang belum ada menghasilkan `Quantity` 0, jadi tetap benar. |
 | 1 | Auto-create cart | `AddItem` membuat `domain.Cart` (id dari `uuid.NewString()`) lalu memanggil `cartRepository.Save` kalau user belum punya cart. `cart.Id` terisi dan dipakai untuk item. |
+| 5 | Sentinel error | `domain/errors.go` berisi `ErrNotFound`, `ErrAuth`, `ErrProductInactive`, `ErrInsufficientStock`, `ErrInvalidToken`. Semua handler memakai `errorStatus(err)`. |
+| 9 | Helper JWT | `getUserId` di `api/helper.go`, duplikasi di `api/cart.go` sudah hilang. |
+| 10 | `panic` dihapus | `FindAll` dan `Delete` hilang dari interface dan repository cart. |
+| 11 | `null` → `[]` | `productService.Index` memakai `make(...)`. |
+| 13 | `app.Listen` | `log.Fatal(app.Listen(...))`. |
+| 3 | `product_id` | `validate:"required,uuid"`. |
 
 > Catatan belajar untuk B: urutan cek-lalu-upsert masih bisa kena race condition kalau dua request datang bersamaan. Keduanya membaca quantity lama, keduanya lolos cek, lalu total quantity melebihi stok. Untuk cart ini masih bisa diterima karena stok yang sebenarnya dikunci saat checkout, bukan saat item masuk cart.
 
 ### ⏳ Masih terbuka
 
-- **Sisa #1 / #10.** `FindAll` (`repository/cart.go` baris 24–26) sudah tidak ada di interface, jadi itu dead code yang isinya `panic`. `Delete` masih ada di interface dan masih `panic`. Hapus keduanya.
-- **#5 baru mulai.** `domain/errors.go` sudah dibuat tapi masih kosong, dan semua error masih memakai `errors.New` lalu dikembalikan sebagai 500.
-- **#3 sisa.** `product_id` belum punya `validate:"required,uuid"`. DTO product (create/update) belum divalidasi sama sekali.
-- **#6, #9–#14** belum disentuh: error DB bocor ke client, ekstraksi JWT masih duplikat, `panic` di `FindAll`/`Save`/`Delete`, `null` vs `[]` di `GET /products`, `_ = app.Listen`, `validator.New()` dibuat per panggilan.
-- **Nit:** pesan `"Product stock not cukupz "` (typo dan campur bahasa), route `/carts/item` (saran: `/cart/items`), konstanta `ProductStockInactive` padahal isinya status, file `halo.md` kosong.
+- **Body JSON rusak tetap 500.** Setelah `ctx.Bind().Body(...)` gagal, handler memanggil `errorStatus(err)`. Error dari bind bukan sentinel, jadi jatuh ke `default` dan menghasilkan 500. Ini terjadi di `api/auth.go`, `api/cart.go` (`AddItem`), dan `api/product.go` (`Create`, `Update`). Di titik itu langsung pakai `http.StatusBadRequest`.
+- **`ErrInvalidToken` → 400, seharusnya 401** (`api/helper.go`). Token tidak valid artinya tidak terautentikasi. Pindahkan ke `case` yang sama dengan `ErrAuth`.
+- **Gagal sign JWT → 401** (`service/auth.go`). `SignedString` gagal adalah masalah server, bukan kesalahan user, jadi seharusnya 500. Kembalikan `err` aslinya, bukan `domain.ErrAuth`.
+- **#6 error DB masih bocor.** Untuk 500, `err.Error()` dari Postgres tetap dikirim ke client. Di cabang 500, log error aslinya dan kirim pesan generik.
+- **#3 sisa.** DTO product (create/update) belum divalidasi.
+- **#14.** `validator.New()` masih dibuat per panggilan, type assertion di `util.Validate` masih bisa panic, `halo.md` kosong masih ada.
+- **Nit:** route `/carts/item` (saran: `/cart/items`), konstanta `ProductStockInactive` padahal isinya status.
 
 ---
 

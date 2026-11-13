@@ -16,7 +16,6 @@ type Cart struct {
 type CartRepository interface {
 	FindByUserId(ctx context.Context, UserId string) (Cart, error)
 	Save(ctx context.Context, cart Cart) error
-	Delete(Ctx context.Context, id string) error
 }
 
 type CartService interface {

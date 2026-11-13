@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/muhammadatak/go-ecommerce-api/domain"
 	"github.com/muhammadatak/go-ecommerce-api/dto"
@@ -27,7 +26,7 @@ func (u *userService) Get(ctx context.Context, email string) (dto.UserData, erro
 	}
 
 	if user.Id == "" {
-		return dto.UserData{}, errors.New("User not found")
+		return dto.UserData{}, domain.ErrNotFound
 	}
 
 	return dto.UserData{

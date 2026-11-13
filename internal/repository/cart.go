@@ -18,13 +18,6 @@ func NewCart(con *sql.DB) domain.CartRepository {
 	}
 }
 
-// Delete implements [domain.CartRepository].
-
-// FindAll implements [domain.CartRepository].
-func (c *cartRepository) FindAll(ctx context.Context) ([]domain.Cart, error) {
-	panic("unimplemented")
-}
-
 // FindById implements [domain.CartRepository].
 func (c *cartRepository) FindByUserId(ctx context.Context, userId string) (domain.Cart, error) {
 	dataset := c.db.From("carts").Where(goqu.C("user_id").Eq(userId))
@@ -42,8 +35,4 @@ func (c *cartRepository) Save(ctx context.Context, cart domain.Cart) error {
 	_, err := executor.ExecContext(ctx)
 
 	return err
-}
-
-func (c *cartRepository) Delete(Ctx context.Context, id string) error {
-	panic("unimplemented")
 }

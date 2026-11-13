@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -91,10 +90,10 @@ func (c *cartService) AddItem(ctx context.Context, req dto.CreateItemRequest) er
 		return err
 	}
 	if product.Id == "" {
-		return errors.New("product not found")
+		return domain.ErrNotFound
 	}
 	if product.Status == domain.ProductStockInactive {
-		return errors.New("Product status is not active")
+		return domain.ErrProductInactive
 	}
 
 	cart, err := c.cartRepository.FindByUserId(ctx, req.UserId)
@@ -119,7 +118,7 @@ func (c *cartService) AddItem(ctx context.Context, req dto.CreateItemRequest) er
 	}
 
 	if req.Quantity+item.Quantity > product.Stock {
-		return errors.New("Product stock not cukupz ")
+		return domain.ErrInsufficientStock
 	}
 
 	data := domain.CartItem{

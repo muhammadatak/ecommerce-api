@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -53,7 +52,7 @@ func (p *productService) Index(ctx context.Context) ([]dto.ProductData, error) {
 		return nil, err
 	}
 
-	var productData []dto.ProductData
+	productData := make([]dto.ProductData, 0)
 
 	for _, v := range products {
 		productData = append(productData, dto.ProductData{
@@ -75,7 +74,7 @@ func (p *productService) Show(ctx context.Context, id string) (dto.ProductData, 
 		return dto.ProductData{}, err
 	}
 	if product.Id == "" {
-		return dto.ProductData{}, errors.New("Product not found")
+		return dto.ProductData{}, domain.ErrNotFound
 	}
 
 	return dto.ProductData{
@@ -96,7 +95,7 @@ func (p *productService) Update(ctx context.Context, req dto.UpdateProductReq) (
 		return dto.ProductData{}, err
 	}
 	if exists.Id == "" {
-		return dto.ProductData{}, errors.New("Product not found")
+		return dto.ProductData{}, domain.ErrNotFound
 
 	}
 
@@ -138,7 +137,7 @@ func (p *productService) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	if exists.Id == "" {
-		return errors.New("Product not found")
+		return domain.ErrNotFound
 	}
 
 	err = p.productRepository.Delete(ctx, id)

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -32,12 +31,12 @@ func (a *authService) Login(ctx context.Context, req dto.AuthRequest) (dto.AuthR
 		return dto.AuthResponse{}, err
 	}
 	if user.Id == "" {
-		return dto.AuthResponse{}, errors.New("email atau password salah")
+		return dto.AuthResponse{}, domain.ErrAuth
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
-		return dto.AuthResponse{}, errors.New("email atau password salah")
+		return dto.AuthResponse{}, domain.ErrAuth
 	}
 
 	claim := jwt.MapClaims{
@@ -48,7 +47,7 @@ func (a *authService) Login(ctx context.Context, req dto.AuthRequest) (dto.AuthR
 	tokenStr, err := token.SignedString([]byte(a.cnf.Jwt.Key))
 
 	if err != nil {
-		return dto.AuthResponse{}, errors.New("auth gagal")
+		return dto.AuthResponse{}, domain.ErrAuth
 	}
 
 	return dto.AuthResponse{

@@ -36,7 +36,7 @@ func (pa productApi) Index(ctx fiber.Ctx) error {
 	res, err := pa.productService.Index(c)
 
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 	return ctx.JSON(dto.CreateResponseSuccess(res))
@@ -50,14 +50,14 @@ func (pa productApi) Create(ctx fiber.Ctx) error {
 
 	err := ctx.Bind().Body(&req)
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 
 	res, err := pa.productService.Create(c, req)
 
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 	return ctx.JSON(dto.CreateResponseSuccess(res))
@@ -72,7 +72,7 @@ func (pa productApi) Show(ctx fiber.Ctx) error {
 	res, err := pa.productService.Show(c, id)
 
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 	return ctx.JSON(dto.CreateResponseSuccess(res))
@@ -87,7 +87,7 @@ func (pa productApi) Update(ctx fiber.Ctx) error {
 	err := ctx.Bind().Body(&req)
 
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 
@@ -96,7 +96,7 @@ func (pa productApi) Update(ctx fiber.Ctx) error {
 	res, err := pa.productService.Update(c, req)
 
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 	return ctx.JSON(dto.CreateResponseSuccess(res))
@@ -111,7 +111,7 @@ func (pa productApi) Delete(ctx fiber.Ctx) error {
 	err := pa.productService.Delete(c, id)
 
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).
+		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 
