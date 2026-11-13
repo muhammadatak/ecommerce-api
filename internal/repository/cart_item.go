@@ -20,7 +20,10 @@ func NewCartItem(con *sql.DB) domain.CartItemRepository {
 
 // Create implements [domain.CartItemRepository].
 func (c *cartItemRepository) Save(ctx context.Context, item domain.CartItem) error {
-	executor := c.db.Insert("cart_items").Rows(item).Executor()
+	executor := c.db.Insert("cart_items").Rows(item).
+		OnConflict(goqu.DoUpdate("cart_id, product_id",
+			goqu.Record{"quantity": goqu.L("cart_items.quantity + EXCLUDED.quantity"),
+				"updated_at": goqu.L("NOW()")})).Executor()
 	_, err := executor.ExecContext(ctx)
 	return err
 }

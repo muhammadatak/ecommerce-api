@@ -25,6 +25,7 @@ type Product struct {
 type ProductRepository interface {
 	FindAll(ctx context.Context) ([]Product, error)
 	FindById(ctx context.Context, id string) (Product, error)
+	FindByIds(ctx context.Context, ids []string) ([]Product, error)
 	Save(ctx context.Context, product *Product) error
 	Update(ctx context.Context, product *Product) error
 	Delete(ctx context.Context, id string) error

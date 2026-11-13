@@ -10,23 +10,22 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/muhammadatak/go-ecommerce-api/domain"
 	"github.com/muhammadatak/go-ecommerce-api/dto"
+	"github.com/muhammadatak/go-ecommerce-api/internal/util"
 )
 
 type cartApi struct {
-	cartService     domain.CartService
-	cartItemService domain.CartItemService
+	cartService domain.CartService
 }
 
-func NewCart(app *fiber.App, cartService domain.CartService, cartItemService domain.CartItemService, authMid fiber.Handler) {
+func NewCart(app *fiber.App, cartService domain.CartService, authMid fiber.Handler) {
 	ca := cartApi{
-		cartService:     cartService,
-		cartItemService: cartItemService,
+		cartService: cartService,
 	}
 
 	carts := app.Group("/carts", authMid)
 
 	carts.Get("/", ca.Show)
-	carts.Post("/", ca.AddItem)
+	carts.Post("/item", ca.AddItem)
 
 }
 
@@ -70,6 +69,12 @@ func (ca cartApi) AddItem(ctx fiber.Ctx) error {
 		return ctx.Status(http.StatusInternalServerError).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
+
+	fails := util.Validate(req)
+	if len(fails) > 0 {
+		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseErrorData("Validation failed", fails))
+	}
+
 	token := jwtware.FromContext(ctx)
 	if token == nil {
 		return ctx.Status(http.StatusUnauthorized).JSON(dto.CreateResponseError("token tidak valid"))
@@ -85,7 +90,7 @@ func (ca cartApi) AddItem(ctx fiber.Ctx) error {
 		return ctx.Status(http.StatusUnauthorized).JSON(dto.CreateResponseError("token tidak valid"))
 	}
 	req.UserId = userId
-	err = ca.cartItemService.Create(c, req)
+	err = ca.cartService.Create(c, req)
 	if err != nil {
 		return ctx.Status(http.StatusInternalServerError).
 			JSON(dto.CreateResponseError(err.Error()))

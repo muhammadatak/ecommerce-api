@@ -16,6 +16,14 @@ func Get() *Config {
 	}
 
 	expInt, _ := strconv.Atoi(os.Getenv("JWT_EXP"))
+	if expInt == 0 {
+		log.Fatal("jwt expired is not configured")
+	}
+	jwtKey := os.Getenv("JWT_KEY")
+	if jwtKey == "" {
+		log.Fatal("jwt key is not configured")
+
+	}
 
 	return &Config{
 		Server: Server{
@@ -31,7 +39,7 @@ func Get() *Config {
 			Tz:   os.Getenv("DB_TZ"),
 		},
 		Jwt: Jwt{
-			Key: os.Getenv("JWT_KEY"),
+			Key: jwtKey,
 			Exp: expInt,
 		},
 	}

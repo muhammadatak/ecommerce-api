@@ -35,9 +35,8 @@ func main() {
 	authRepos := service.NewAuth(userRepos, cnf)
 	productService := service.NewProduct(productRepository)
 	cartService := service.NewCart(cartRepos, productRepository, cartItemRepos)
-	cartItemService := service.NewCartItem(cartItemRepos, cartRepos, productRepository)
 	//api
-	api.NewCart(app, cartService, cartItemService, jwtMidd)
+	api.NewCart(app, cartService, jwtMidd)
 	api.NewProduct(app, productService, jwtMidd)
 	api.NewAuth(app, authRepos)
 

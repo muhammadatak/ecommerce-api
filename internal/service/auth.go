@@ -32,12 +32,12 @@ func (a *authService) Login(ctx context.Context, req dto.AuthRequest) (dto.AuthR
 		return dto.AuthResponse{}, err
 	}
 	if user.Id == "" {
-		return dto.AuthResponse{}, errors.New("user not found")
+		return dto.AuthResponse{}, errors.New("email atau password salah")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
-		return dto.AuthResponse{}, errors.New("paassword salah")
+		return dto.AuthResponse{}, errors.New("email atau password salah")
 	}
 
 	claim := jwt.MapClaims{

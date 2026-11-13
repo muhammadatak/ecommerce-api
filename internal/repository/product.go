@@ -42,6 +42,18 @@ func (p *productRepository) FindById(ctx context.Context, id string) (domain.Pro
 	return result, nil
 }
 
+// FindByIds implements [domain.ProductRepository].
+func (p *productRepository) FindByIds(ctx context.Context, ids []string) ([]domain.Product, error) {
+	dataset := p.db.From("products").Where(goqu.C("id").Eq(ids))
+	var result []domain.Product
+
+	err := dataset.ScanStructsContext(ctx, &result)
+	if err != nil {
+		return []domain.Product{}, err
+	}
+	return result, nil
+}
+
 // Save implements [domain.ProductRepository].
 func (p *productRepository) Save(ctx context.Context, product *domain.Product) error {
 	executor := p.db.Insert("products").Rows(product).Executor()
