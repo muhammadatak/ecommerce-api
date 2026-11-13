@@ -36,9 +36,12 @@ func (c *cartRepository) FindByUserId(ctx context.Context, userId string) (domai
 	return result, nil
 }
 
-// Save implements [domain.CartRepository].
+// Create implements [domain.CartRepository].
 func (c *cartRepository) Save(ctx context.Context, cart domain.Cart) error {
-	panic("unimplemented")
+	executor := c.db.Insert("carts").Rows(cart).Executor()
+	_, err := executor.ExecContext(ctx)
+
+	return err
 }
 
 func (c *cartRepository) Delete(Ctx context.Context, id string) error {

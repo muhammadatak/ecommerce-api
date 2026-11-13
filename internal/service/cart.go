@@ -43,11 +43,14 @@ func (c *cartService) Show(ctx context.Context, userId string) (dto.CartData, er
 	if err != nil {
 		return dto.CartData{}, err
 	}
-
+	if len(cartItems) == 0 {
+		return dto.CartData{Id: cart.Id, CartItem: []dto.CartItemData{}}, nil
+	}
 	productsIds := make([]string, 0)
 	for _, v := range cartItems {
 		productsIds = append(productsIds, v.ProductId)
 	}
+
 	products, err := c.productRepository.FindByIds(ctx, productsIds)
 	if err != nil {
 		return dto.CartData{}, err
@@ -81,7 +84,7 @@ func (c *cartService) Show(ctx context.Context, userId string) (dto.CartData, er
 	}, nil
 }
 
-func (c *cartService) Create(ctx context.Context, req dto.CreateItemRequest) error {
+func (c *cartService) AddItem(ctx context.Context, req dto.CreateItemRequest) error {
 
 	product, err := c.productRepository.FindById(ctx, req.ProductId)
 	if err != nil {
@@ -93,25 +96,39 @@ func (c *cartService) Create(ctx context.Context, req dto.CreateItemRequest) err
 	if product.Status == domain.ProductStockInactive {
 		return errors.New("Product status is not active")
 	}
-	if req.Quantity > product.Stock {
-		return errors.New("Product stock not cukupz ")
-	}
 
 	cart, err := c.cartRepository.FindByUserId(ctx, req.UserId)
 	if err != nil {
 		return err
 	}
 	if cart.Id == "" {
-		return errors.New("product not found")
+		cart = domain.Cart{
+			Id:        uuid.NewString(),
+			UserId:    req.UserId,
+			CreatedAt: sql.NullTime{Valid: true, Time: time.Now()},
+		}
+		err = c.cartRepository.Save(ctx, cart)
+		if err != nil {
+			return err
+		}
 	}
 
-	item := domain.CartItem{
+	item, err := c.cartItemRepository.FindByCartAndProduct(ctx, cart.Id, product.Id)
+	if err != nil {
+		return err
+	}
+
+	if req.Quantity+item.Quantity > product.Stock {
+		return errors.New("Product stock not cukupz ")
+	}
+
+	data := domain.CartItem{
 		Id:        uuid.NewString(),
 		CartId:    cart.Id,
 		ProductId: req.ProductId,
 		Quantity:  req.Quantity,
 		CreatedAt: sql.NullTime{Valid: true, Time: time.Now()},
 	}
-	err = c.cartItemRepository.Save(ctx, item)
+	err = c.cartItemRepository.Save(ctx, data)
 	return err
 }

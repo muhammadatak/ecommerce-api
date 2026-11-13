@@ -6,7 +6,7 @@ Yang sudah bagus: lapisan domain → repository → service → api terpisah, de
 
 ## Status progres (update terakhir)
 
-Dicek dari perubahan yang belum di-commit, dibandingkan commit `fee0bd2`. `go build` dan `go vet` masih lolos.
+Dicek terhadap commit `9ba22bc` ditambah perubahan yang belum di-commit. `go build` dan `go vet` lolos.
 
 ### ✅ Sudah dikerjakan
 
@@ -18,22 +18,15 @@ Dicek dari perubahan yang belum di-commit, dibandingkan commit `fee0bd2`. `go bu
 | 7 | User enumeration | Kedua kasus mengembalikan `"email atau password salah"`. |
 | 8 | N+1 query | `FindByIds` dengan `IN (...)` ditambah lookup lewat map. |
 | Bag. 2 | Gabung ke CartService | `service/item.go` dihapus, `CartItemService` hilang, logika pindah ke `CartService.Create`. |
+| A | `IN ()` saat cart kosong | `Show` sekarang return lebih awal kalau `len(cartItems) == 0`. |
+| B | Cek stok kumulatif | `FindByCartAndProduct` mengambil quantity yang sudah ada di cart, lalu yang dicek `req.Quantity + item.Quantity > product.Stock`. Item yang belum ada menghasilkan `Quantity` 0, jadi tetap benar. |
+| 1 | Auto-create cart | `AddItem` membuat `domain.Cart` (id dari `uuid.NewString()`) lalu memanggil `cartRepository.Save` kalau user belum punya cart. `cart.Id` terisi dan dipakai untuk item. |
 
-### 🔴 Bug baru dari perubahan ini
-
-**A. `GET /carts` jadi 500 kalau cart ada tapi itemnya kosong.** Kalau `productsIds` kosong, goqu menghasilkan `WHERE ("id" IN ())`, dan itu syntax error di Postgres (sudah dicek dengan menjalankan goqu langsung). Kasus ini terjadi misalnya setelah semua produk di cart dihapus (ON DELETE CASCADE). Perbaikannya: return lebih awal.
-
-```go
-if len(cartItems) == 0 {
-    return dto.CartData{Id: cart.Id, CartItem: []dto.CartItemData{}}, nil
-}
-```
-
-**B. Cek stok tidak menghitung item yang sudah ada di cart.** Stok 5: tambah 4 → lolos, tambah 4 lagi → tetap lolos (`4 > 5` false), lalu upsert membuat quantity jadi 8. Bandingkan `existing.Quantity + req.Quantity` dengan stok, atau taruh kondisinya di SQL upsert.
+> Catatan belajar untuk B: urutan cek-lalu-upsert masih bisa kena race condition kalau dua request datang bersamaan. Keduanya membaca quantity lama, keduanya lolos cek, lalu total quantity melebihi stok. Untuk cart ini masih bisa diterima karena stok yang sebenarnya dikunci saat checkout, bukan saat item masuk cart.
 
 ### ⏳ Masih terbuka
 
-- **#1 belum selesai.** Cart masih tidak pernah dibuat untuk user baru, dan pesan errornya masih `"product not found"` (`service/cart.go` baris 105). `cartRepository.Save` masih `panic`.
+- **Sisa #1 / #10.** `FindAll` (`repository/cart.go` baris 24–26) sudah tidak ada di interface, jadi itu dead code yang isinya `panic`. `Delete` masih ada di interface dan masih `panic`. Hapus keduanya.
 - **#5 baru mulai.** `domain/errors.go` sudah dibuat tapi masih kosong, dan semua error masih memakai `errors.New` lalu dikembalikan sebagai 500.
 - **#3 sisa.** `product_id` belum punya `validate:"required,uuid"`. DTO product (create/update) belum divalidasi sama sekali.
 - **#6, #9–#14** belum disentuh: error DB bocor ke client, ekstraksi JWT masih duplikat, `panic` di `FindAll`/`Save`/`Delete`, `null` vs `[]` di `GET /products`, `_ = app.Listen`, `validator.New()` dibuat per panggilan.

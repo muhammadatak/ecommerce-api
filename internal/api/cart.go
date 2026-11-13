@@ -90,7 +90,7 @@ func (ca cartApi) AddItem(ctx fiber.Ctx) error {
 		return ctx.Status(http.StatusUnauthorized).JSON(dto.CreateResponseError("token tidak valid"))
 	}
 	req.UserId = userId
-	err = ca.cartService.Create(c, req)
+	err = ca.cartService.AddItem(c, req)
 	if err != nil {
 		return ctx.Status(http.StatusInternalServerError).
 			JSON(dto.CreateResponseError(err.Error()))

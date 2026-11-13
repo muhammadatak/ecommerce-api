@@ -38,3 +38,14 @@ func (c *cartItemRepository) FindByCartId(ctx context.Context, cartId string) ([
 
 	return result, nil
 }
+
+func (c *cartItemRepository) FindByCartAndProduct(ctx context.Context, cartId string, productId string) (domain.CartItem, error) {
+	dataset := c.db.From("cart_items").Where(goqu.C("cart_id").Eq(cartId), goqu.C("product_id").Eq(productId))
+	var result domain.CartItem
+	_, err := dataset.ScanStructContext(ctx, &result)
+	if err != nil {
+		return domain.CartItem{}, err
+	}
+
+	return result, nil
+}
