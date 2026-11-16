@@ -8,4 +8,5 @@ var (
 	ErrInsufficientStock = errors.New("Insufficient stock")
 	ErrAuth              = errors.New("Wrong email or password")
 	ErrInvalidToken      = errors.New("Invalid token")
+	ErrDupeEmail         = errors.New("Email is already registered")
 )

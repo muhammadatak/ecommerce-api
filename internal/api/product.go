@@ -50,7 +50,7 @@ func (pa productApi) Create(ctx fiber.Ctx) error {
 
 	err := ctx.Bind().Body(&req)
 	if err != nil {
-		return ctx.Status(errorStatus(err)).
+		return ctx.Status(http.StatusBadRequest).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 
@@ -87,7 +87,7 @@ func (pa productApi) Update(ctx fiber.Ctx) error {
 	err := ctx.Bind().Body(&req)
 
 	if err != nil {
-		return ctx.Status(errorStatus(err)).
+		return ctx.Status(http.StatusBadRequest).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 

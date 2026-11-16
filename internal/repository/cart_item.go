@@ -12,10 +12,22 @@ type cartItemRepository struct {
 	db *goqu.Database
 }
 
+// FindByCartId implements [domain.CartItemRepository].
+
 func NewCartItem(con *sql.DB) domain.CartItemRepository {
 	return &cartItemRepository{
 		db: goqu.New("default", con),
 	}
+}
+func (c *cartItemRepository) FindByIdAndCartId(ctx context.Context, id string, cartId string) (domain.CartItem, error) {
+	dataset := c.db.From("cart_items").Where(goqu.C("id").Eq(id), goqu.C("cart_id").Eq(cartId))
+	var result domain.CartItem
+	_, err := dataset.ScanStructContext(ctx, &result)
+	if err != nil {
+		return domain.CartItem{}, err
+	}
+
+	return result, nil
 }
 
 // Create implements [domain.CartItemRepository].
@@ -28,7 +40,7 @@ func (c *cartItemRepository) Save(ctx context.Context, item domain.CartItem) err
 	return err
 }
 
-func (c *cartItemRepository) FindByCartId(ctx context.Context, cartId string) ([]domain.CartItem, error) {
+func (c *cartItemRepository) FindAllByCartId(ctx context.Context, cartId string) ([]domain.CartItem, error) {
 	dataset := c.db.From("cart_items").Where(goqu.C("cart_id").Eq(cartId))
 	var result []domain.CartItem
 	err := dataset.ScanStructsContext(ctx, &result)
@@ -48,4 +60,25 @@ func (c *cartItemRepository) FindByCartAndProduct(ctx context.Context, cartId st
 	}
 
 	return result, nil
+}
+
+// Delete implements [domain.CartItemRepository].
+func (c *cartItemRepository) Delete(ctx context.Context, id string) error {
+	executor := c.db.Delete("cart_items").Where(goqu.C("id").Eq(id)).Executor()
+	_, err := executor.ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Update implements [domain.CartItemRepository].
+func (c *cartItemRepository) Update(ctx context.Context, item *domain.CartItem) error {
+	executor := c.db.Update("cart_items").Where(goqu.C("id").Eq(item.Id), goqu.C("cart_id").Eq(item.CartId)).
+		Set(goqu.Record{"quantity": item.Quantity, "updated_at": item.UpdatedAt}).Executor()
+	_, err := executor.ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }

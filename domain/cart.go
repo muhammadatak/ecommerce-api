@@ -21,4 +21,6 @@ type CartRepository interface {
 type CartService interface {
 	Show(ctx context.Context, UserId string) (dto.CartData, error)
 	AddItem(ctx context.Context, req dto.CreateItemRequest) error
+	UpdateItemQuantity(ctx context.Context, req dto.UpdateItemQuantity) error
+	DeleteItem(ctx context.Context, id string, userId string) error
 }

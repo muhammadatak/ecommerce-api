@@ -24,6 +24,8 @@ func NewCart(app *fiber.App, cartService domain.CartService, authMid fiber.Handl
 
 	carts.Get("/", ca.Show)
 	carts.Post("/item", ca.AddItem)
+	carts.Patch("/item/:id", ca.UpdateItemQuantity)
+	carts.Delete("/item/:id", ca.DeleteItem)
 
 }
 
@@ -54,7 +56,7 @@ func (ca cartApi) AddItem(ctx fiber.Ctx) error {
 	var req dto.CreateItemRequest
 	err := ctx.Bind().Body(&req)
 	if err != nil {
-		return ctx.Status(errorStatus(err)).
+		return ctx.Status(http.StatusBadRequest).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 
@@ -74,4 +76,56 @@ func (ca cartApi) AddItem(ctx fiber.Ctx) error {
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 	return ctx.SendStatus(http.StatusCreated)
+}
+
+func (ca cartApi) UpdateItemQuantity(ctx fiber.Ctx) error {
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	var req dto.UpdateItemQuantity
+	err := ctx.Bind().Body(&req)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).
+			JSON(dto.CreateResponseError(err.Error()))
+	}
+	fails := util.Validate(req)
+	if len(fails) > 0 {
+		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseErrorData("Validation failed", fails))
+	}
+
+	id := ctx.Params("id")
+	req.Id = id
+	userId, err := getUserId(ctx)
+	if err != nil {
+		return ctx.Status(errorStatus(err)).
+			JSON(dto.CreateResponseError(err.Error()))
+	}
+	req.UserId = userId
+	err = ca.cartService.UpdateItemQuantity(c, req)
+	if err != nil {
+		return ctx.Status(errorStatus(err)).
+			JSON(dto.CreateResponseError(err.Error()))
+	}
+
+	return ctx.SendStatus(http.StatusOK)
+}
+func (ca cartApi) DeleteItem(ctx fiber.Ctx) error {
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	id := ctx.Params("id")
+	userId, err := getUserId(ctx)
+	if err != nil {
+		return ctx.Status(errorStatus(err)).
+			JSON(dto.CreateResponseError(err.Error()))
+	}
+	err = ca.cartService.DeleteItem(c, id, userId)
+
+	if err != nil {
+		return ctx.Status(errorStatus(err)).
+			JSON(dto.CreateResponseError(err.Error()))
+	}
+
+	return ctx.SendStatus(http.StatusNoContent)
+
 }

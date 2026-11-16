@@ -29,3 +29,12 @@ func (u *userRepository) FindByEmail(ctx context.Context, email string) (domain.
 	}
 	return result, nil
 }
+
+func (u *userRepository) Save(ctx context.Context, user domain.User) error {
+	executor := u.db.Insert("users").Rows(user).Executor()
+	_, err := executor.ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}

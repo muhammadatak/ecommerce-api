@@ -16,6 +16,8 @@ type cartService struct {
 	cartItemRepository domain.CartItemRepository
 }
 
+// DeleteItem implements [domain.CartService].
+
 func NewCart(
 	cartRepository domain.CartRepository,
 	productRepository domain.ProductRepository,
@@ -35,9 +37,9 @@ func (c *cartService) Show(ctx context.Context, userId string) (dto.CartData, er
 		return dto.CartData{}, err
 	}
 	if cart.Id == "" {
-		return dto.CartData{CartItem: []dto.CartItemData{}}, err
+		return dto.CartData{CartItem: []dto.CartItemData{}}, nil
 	}
-	cartItems, err := c.cartItemRepository.FindByCartId(ctx, cart.Id)
+	cartItems, err := c.cartItemRepository.FindAllByCartId(ctx, cart.Id)
 
 	if err != nil {
 		return dto.CartData{}, err
@@ -130,4 +132,68 @@ func (c *cartService) AddItem(ctx context.Context, req dto.CreateItemRequest) er
 	}
 	err = c.cartItemRepository.Save(ctx, data)
 	return err
+}
+
+func (c *cartService) DeleteItem(ctx context.Context, id string, userId string) error {
+	cart, err := c.cartRepository.FindByUserId(ctx, userId)
+	if err != nil {
+		return err
+	}
+	if cart.Id == "" {
+		return domain.ErrNotFound
+	}
+	item, err := c.cartItemRepository.FindByIdAndCartId(ctx, id, cart.Id)
+	if err != nil {
+		return err
+	}
+
+	if item.Id == "" {
+		return domain.ErrNotFound
+	}
+
+	err = c.cartItemRepository.Delete(ctx, item.Id)
+	return err
+
+}
+
+// UpdateItemQuantity implements [domain.CartService].
+func (c *cartService) UpdateItemQuantity(ctx context.Context, req dto.UpdateItemQuantity) error {
+	cart, err := c.cartRepository.FindByUserId(ctx, req.UserId)
+	if err != nil {
+		return err
+	}
+	if cart.Id == "" {
+		return domain.ErrNotFound
+	}
+	item, err := c.cartItemRepository.FindByIdAndCartId(ctx, req.Id, cart.Id)
+	if err != nil {
+		return err
+	}
+
+	if item.Id == "" {
+		return domain.ErrNotFound
+	}
+
+	product, err := c.productRepository.FindById(ctx, item.ProductId)
+	if err != nil {
+		return err
+	}
+	if req.Quantity > product.Stock {
+		return domain.ErrInsufficientStock
+	}
+
+	if product.Status != domain.ProductStockActive {
+		return domain.ErrProductInactive
+	}
+
+	item.Quantity = req.Quantity
+	item.UpdatedAt = sql.NullTime{Valid: true, Time: time.Now()}
+	err = c.cartItemRepository.Update(ctx, &item)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }

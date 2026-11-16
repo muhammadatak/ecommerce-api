@@ -15,7 +15,10 @@ type CartItem struct {
 }
 
 type CartItemRepository interface {
-	FindByCartId(ctx context.Context, cartId string) ([]CartItem, error)
+	FindAllByCartId(ctx context.Context, cartId string) ([]CartItem, error)
+	FindByIdAndCartId(ctx context.Context, id, cartId string) (CartItem, error)
 	FindByCartAndProduct(ctx context.Context, cartId string, productId string) (CartItem, error)
 	Save(ctx context.Context, item CartItem) error
+	Update(ctx context.Context, cart *CartItem) error
+	Delete(ctx context.Context, id string) error
 }
