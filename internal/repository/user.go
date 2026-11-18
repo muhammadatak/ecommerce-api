@@ -20,7 +20,7 @@ func NewUser(con *sql.DB) domain.UserRepository {
 
 // FindByEmail implements [domain.UserRepository].
 func (u *userRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
-	dataset := u.db.From("users").Where(goqu.C("email").Eq(email))
+	dataset := getExecutor(ctx, u.db).From("users").Where(goqu.C("email").Eq(email))
 	var result domain.User
 	_, err := dataset.ScanStructContext(ctx, &result)
 
@@ -31,7 +31,7 @@ func (u *userRepository) FindByEmail(ctx context.Context, email string) (domain.
 }
 
 func (u *userRepository) Save(ctx context.Context, user domain.User) error {
-	executor := u.db.Insert("users").Rows(user).Executor()
+	executor := getExecutor(ctx, u.db).Insert("users").Rows(user).Executor()
 	_, err := executor.ExecContext(ctx)
 	if err != nil {
 		return err

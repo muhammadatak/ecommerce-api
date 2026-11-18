@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/muhammadatak/go-ecommerce-api/domain"
 )
 
@@ -20,7 +21,7 @@ func NewProduct(con *sql.DB) domain.ProductRepository {
 
 // FindAll implements [domain.ProductRepository].
 func (p *productRepository) FindAll(ctx context.Context) ([]domain.Product, error) {
-	dataset := p.db.From("products")
+	dataset := getExecutor(ctx, p.db).From("products")
 	var result []domain.Product
 	err := dataset.ScanStructsContext(ctx, &result)
 
@@ -32,7 +33,7 @@ func (p *productRepository) FindAll(ctx context.Context) ([]domain.Product, erro
 
 // FindById implements [domain.ProductRepository].
 func (p *productRepository) FindById(ctx context.Context, id string) (domain.Product, error) {
-	dataset := p.db.From("products").Where(goqu.C("id").Eq(id))
+	dataset := getExecutor(ctx, p.db).From("products").Where(goqu.C("id").Eq(id))
 	var result domain.Product
 
 	_, err := dataset.ScanStructContext(ctx, &result)
@@ -44,7 +45,10 @@ func (p *productRepository) FindById(ctx context.Context, id string) (domain.Pro
 
 // FindByIds implements [domain.ProductRepository].
 func (p *productRepository) FindByIds(ctx context.Context, ids []string) ([]domain.Product, error) {
-	dataset := p.db.From("products").Where(goqu.C("id").Eq(ids))
+	dataset := getExecutor(ctx, p.db).From("products").Where(goqu.C("id").Eq(ids)).ForUpdate(exp.Wait)
+	if len(ids) == 0 {
+		return []domain.Product{}, nil // tidak perlu query
+	}
 	var result []domain.Product
 
 	err := dataset.ScanStructsContext(ctx, &result)
@@ -56,7 +60,7 @@ func (p *productRepository) FindByIds(ctx context.Context, ids []string) ([]doma
 
 // Save implements [domain.ProductRepository].
 func (p *productRepository) Save(ctx context.Context, product *domain.Product) error {
-	executor := p.db.Insert("products").Rows(product).Executor()
+	executor := getExecutor(ctx, p.db).Insert("products").Rows(product).Executor()
 	_, err := executor.ExecContext(ctx)
 	if err != nil {
 		return err
@@ -66,7 +70,7 @@ func (p *productRepository) Save(ctx context.Context, product *domain.Product) e
 
 // Update implements [domain.ProductRepository].
 func (p *productRepository) Update(ctx context.Context, product *domain.Product) error {
-	executor := p.db.Update("products").Where(goqu.C("id").Eq(product.Id)).Set(product).Executor()
+	executor := getExecutor(ctx, p.db).Update("products").Where(goqu.C("id").Eq(product.Id)).Set(product).Executor()
 	_, err := executor.ExecContext(ctx)
 	if err != nil {
 		return err
@@ -76,7 +80,7 @@ func (p *productRepository) Update(ctx context.Context, product *domain.Product)
 
 // Delete implements [domain.ProductRepository].
 func (p *productRepository) Delete(ctx context.Context, id string) error {
-	executor := p.db.Delete("products").Where(goqu.C("id").Eq(id)).Executor()
+	executor := getExecutor(ctx, p.db).Delete("products").Where(goqu.C("id").Eq(id)).Executor()
 	_, err := executor.ExecContext(ctx)
 	if err != nil {
 		return err

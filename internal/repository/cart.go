@@ -20,7 +20,7 @@ func NewCart(con *sql.DB) domain.CartRepository {
 
 // FindById implements [domain.CartRepository].
 func (c *cartRepository) FindByUserId(ctx context.Context, userId string) (domain.Cart, error) {
-	dataset := c.db.From("carts").Where(goqu.C("user_id").Eq(userId))
+	dataset := getExecutor(ctx, c.db).From("carts").Where(goqu.C("user_id").Eq(userId))
 	var result domain.Cart
 	_, err := dataset.ScanStructContext(ctx, &result)
 	if err != nil {
@@ -31,7 +31,7 @@ func (c *cartRepository) FindByUserId(ctx context.Context, userId string) (domai
 
 // Create implements [domain.CartRepository].
 func (c *cartRepository) Save(ctx context.Context, cart domain.Cart) error {
-	executor := c.db.Insert("carts").Rows(cart).Executor()
+	executor := getExecutor(ctx, c.db).Insert("carts").Rows(cart).Executor()
 	_, err := executor.ExecContext(ctx)
 
 	return err

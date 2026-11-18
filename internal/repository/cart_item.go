@@ -20,7 +20,7 @@ func NewCartItem(con *sql.DB) domain.CartItemRepository {
 	}
 }
 func (c *cartItemRepository) FindByIdAndCartId(ctx context.Context, id string, cartId string) (domain.CartItem, error) {
-	dataset := c.db.From("cart_items").Where(goqu.C("id").Eq(id), goqu.C("cart_id").Eq(cartId))
+	dataset := getExecutor(ctx, c.db).From("cart_items").Where(goqu.C("id").Eq(id), goqu.C("cart_id").Eq(cartId))
 	var result domain.CartItem
 	_, err := dataset.ScanStructContext(ctx, &result)
 	if err != nil {
@@ -32,7 +32,7 @@ func (c *cartItemRepository) FindByIdAndCartId(ctx context.Context, id string, c
 
 // Create implements [domain.CartItemRepository].
 func (c *cartItemRepository) Save(ctx context.Context, item domain.CartItem) error {
-	executor := c.db.Insert("cart_items").Rows(item).
+	executor := getExecutor(ctx, c.db).Insert("cart_items").Rows(item).
 		OnConflict(goqu.DoUpdate("cart_id, product_id",
 			goqu.Record{"quantity": goqu.L("cart_items.quantity + EXCLUDED.quantity"),
 				"updated_at": goqu.L("NOW()")})).Executor()
@@ -41,7 +41,7 @@ func (c *cartItemRepository) Save(ctx context.Context, item domain.CartItem) err
 }
 
 func (c *cartItemRepository) FindAllByCartId(ctx context.Context, cartId string) ([]domain.CartItem, error) {
-	dataset := c.db.From("cart_items").Where(goqu.C("cart_id").Eq(cartId))
+	dataset := getExecutor(ctx, c.db).From("cart_items").Where(goqu.C("cart_id").Eq(cartId))
 	var result []domain.CartItem
 	err := dataset.ScanStructsContext(ctx, &result)
 	if err != nil {
@@ -52,7 +52,7 @@ func (c *cartItemRepository) FindAllByCartId(ctx context.Context, cartId string)
 }
 
 func (c *cartItemRepository) FindByCartAndProduct(ctx context.Context, cartId string, productId string) (domain.CartItem, error) {
-	dataset := c.db.From("cart_items").Where(goqu.C("cart_id").Eq(cartId), goqu.C("product_id").Eq(productId))
+	dataset := getExecutor(ctx, c.db).From("cart_items").Where(goqu.C("cart_id").Eq(cartId), goqu.C("product_id").Eq(productId))
 	var result domain.CartItem
 	_, err := dataset.ScanStructContext(ctx, &result)
 	if err != nil {
@@ -64,7 +64,7 @@ func (c *cartItemRepository) FindByCartAndProduct(ctx context.Context, cartId st
 
 // Delete implements [domain.CartItemRepository].
 func (c *cartItemRepository) Delete(ctx context.Context, id string) error {
-	executor := c.db.Delete("cart_items").Where(goqu.C("id").Eq(id)).Executor()
+	executor := getExecutor(ctx, c.db).Delete("cart_items").Where(goqu.C("id").Eq(id)).Executor()
 	_, err := executor.ExecContext(ctx)
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (c *cartItemRepository) Delete(ctx context.Context, id string) error {
 
 // Update implements [domain.CartItemRepository].
 func (c *cartItemRepository) Update(ctx context.Context, item *domain.CartItem) error {
-	executor := c.db.Update("cart_items").Where(goqu.C("id").Eq(item.Id), goqu.C("cart_id").Eq(item.CartId)).
+	executor := getExecutor(ctx, c.db).Update("cart_items").Where(goqu.C("id").Eq(item.Id), goqu.C("cart_id").Eq(item.CartId)).
 		Set(goqu.Record{"quantity": item.Quantity, "updated_at": item.UpdatedAt}).Executor()
 	_, err := executor.ExecContext(ctx)
 	if err != nil {

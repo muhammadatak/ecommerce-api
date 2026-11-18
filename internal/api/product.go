@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 	"github.com/muhammadatak/go-ecommerce-api/domain"
 	"github.com/muhammadatak/go-ecommerce-api/dto"
 )
@@ -67,9 +68,11 @@ func (pa productApi) Show(ctx fiber.Ctx) error {
 	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
 	defer cancel()
 
-	id := ctx.Params("id")
-
-	res, err := pa.productService.Show(c, id)
+	id, err := uuid.Parse(ctx.Params("id"))
+	if err != nil {
+		return err
+	}
+	res, err := pa.productService.Show(c, id.String())
 
 	if err != nil {
 		return ctx.Status(errorStatus(err)).
@@ -91,8 +94,11 @@ func (pa productApi) Update(ctx fiber.Ctx) error {
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 
-	id := ctx.Params("id")
-	req.Id = id
+	id, err := uuid.Parse(ctx.Params("id"))
+	if err != nil {
+		return err
+	}
+	req.Id = id.String()
 	res, err := pa.productService.Update(c, req)
 
 	if err != nil {
@@ -106,9 +112,11 @@ func (pa productApi) Delete(ctx fiber.Ctx) error {
 	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
 	defer cancel()
 
-	id := ctx.Params("id")
-
-	err := pa.productService.Delete(c, id)
+	id, err := uuid.Parse(ctx.Params("id"))
+	if err != nil {
+		return err
+	}
+	err = pa.productService.Delete(c, id.String())
 
 	if err != nil {
 		return ctx.Status(errorStatus(err)).

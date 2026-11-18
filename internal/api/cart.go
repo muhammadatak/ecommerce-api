@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 	"github.com/muhammadatak/go-ecommerce-api/domain"
 	"github.com/muhammadatak/go-ecommerce-api/dto"
 	"github.com/muhammadatak/go-ecommerce-api/internal/util"
@@ -93,8 +94,11 @@ func (ca cartApi) UpdateItemQuantity(ctx fiber.Ctx) error {
 		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseErrorData("Validation failed", fails))
 	}
 
-	id := ctx.Params("id")
-	req.Id = id
+	id, err := uuid.Parse(ctx.Params("id"))
+	if err != nil {
+		return err
+	}
+	req.Id = id.String()
 	userId, err := getUserId(ctx)
 	if err != nil {
 		return ctx.Status(errorStatus(err)).
@@ -113,13 +117,16 @@ func (ca cartApi) DeleteItem(ctx fiber.Ctx) error {
 	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
 	defer cancel()
 
-	id := ctx.Params("id")
+	id, err := uuid.Parse(ctx.Params("id"))
+	if err != nil {
+		return err
+	}
 	userId, err := getUserId(ctx)
 	if err != nil {
 		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
-	err = ca.cartService.DeleteItem(c, id, userId)
+	err = ca.cartService.DeleteItem(c, id.String(), userId)
 
 	if err != nil {
 		return ctx.Status(errorStatus(err)).

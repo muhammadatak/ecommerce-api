@@ -31,15 +31,19 @@ func main() {
 	productRepository := repository.NewProduct(dbConn)
 	cartRepos := repository.NewCart(dbConn)
 	cartItemRepos := repository.NewCartItem(dbConn)
+	orderRepos := repository.NewOrder(dbConn)
+	orderItemRepos := repository.NewOrderItem(dbConn)
 
 	//service
 	authRepos := service.NewAuth(userRepos, cnf)
 	productService := service.NewProduct(productRepository)
 	cartService := service.NewCart(cartRepos, productRepository, cartItemRepos)
+	orderService := service.NewOrder(orderRepos, orderItemRepos, cartRepos, cartItemRepos, productRepository)
 	//api
 	api.NewCart(app, cartService, jwtMidd)
 	api.NewProduct(app, productService, jwtMidd)
 	api.NewAuth(app, authRepos)
+	api.NewOrder(app, orderService, jwtMidd)
 
 	log.Fatal(app.Listen(cnf.Server.Host + ":" + cnf.Server.Port))
 
