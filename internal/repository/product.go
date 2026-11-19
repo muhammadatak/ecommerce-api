@@ -45,12 +45,14 @@ func (p *productRepository) FindById(ctx context.Context, id string) (domain.Pro
 
 // FindByIds implements [domain.ProductRepository].
 func (p *productRepository) FindByIds(ctx context.Context, ids []string) ([]domain.Product, error) {
-	dataset := getExecutor(ctx, p.db).From("products").Where(goqu.C("id").Eq(ids)).Order(goqu.C("id").Asc()).ForUpdate(exp.Wait)
+	dataset := getExecutor(ctx, p.db).From("products").Where(goqu.C("id").Eq(ids)).Order(goqu.C("id").Asc())
 	if len(ids) == 0 {
 		return []domain.Product{}, nil // tidak perlu query
 	}
 	var result []domain.Product
-
+	if isTx(ctx) {
+		dataset = dataset.ForUpdate(exp.Wait)
+	}
 	err := dataset.ScanStructsContext(ctx, &result)
 	if err != nil {
 		return []domain.Product{}, err
@@ -71,6 +73,16 @@ func (p *productRepository) Save(ctx context.Context, product *domain.Product) e
 // Update implements [domain.ProductRepository].
 func (p *productRepository) Update(ctx context.Context, product *domain.Product) error {
 	executor := getExecutor(ctx, p.db).Update("products").Where(goqu.C("id").Eq(product.Id)).Set(product).Executor()
+	_, err := executor.ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *productRepository) UpdateStock(ctx context.Context, product *domain.Product) error {
+	executor := getExecutor(ctx, p.db).Update("products").Where(goqu.C("id").Eq(product.Id)).Set(goqu.Record{"stock": product.Stock}).Executor()
+
 	_, err := executor.ExecContext(ctx)
 	if err != nil {
 		return err

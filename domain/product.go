@@ -29,6 +29,7 @@ type ProductRepository interface {
 	Save(ctx context.Context, product *Product) error
 	Update(ctx context.Context, product *Product) error
 	Delete(ctx context.Context, id string) error
+	UpdateStock(ctx context.Context, product *Product) error
 }
 
 type ProductService interface {

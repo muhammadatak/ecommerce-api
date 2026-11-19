@@ -37,8 +37,9 @@ func NewOrder(
 	}
 }
 
-func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) error {
-	return o.txRepository.WithTransaction(ctx, func(txCtx context.Context) error {
+func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) (dto.CheckoutResponses, error) {
+	var order domain.Order
+	err := o.txRepository.WithTransaction(ctx, func(txCtx context.Context) error {
 		cart, err := o.cartRepository.FindByUserId(txCtx, req.UserId)
 		if err != nil {
 			return err
@@ -100,13 +101,14 @@ func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) er
 			totalPrice += v.Price * qty
 		}
 
-		err = o.orderRepository.Save(txCtx, domain.Order{
+		order = domain.Order{
 			Id:         newOrderId,
 			UserId:     req.UserId,
 			Status:     domain.OrderStatusPending,
 			TotalPrice: totalPrice,
 			CreatedAt:  time.Now(),
-		})
+		}
+		err = o.orderRepository.Save(txCtx, order)
 		if err != nil {
 			return err
 		}
@@ -120,7 +122,7 @@ func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) er
 		// minus stok produk by item quantity
 		for _, v := range products {
 			v.Stock -= itemByProduct[v.Id].Quantity
-			err = o.productRepository.Update(txCtx, &v)
+			err = o.productRepository.UpdateStock(txCtx, &v)
 			if err != nil {
 				return err
 			}
@@ -132,4 +134,13 @@ func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) er
 		}
 		return nil
 	})
+	if err != nil {
+		return dto.CheckoutResponses{}, err
+	}
+	res := dto.CheckoutResponses{
+		Id:         order.Id,
+		Status:     order.Status,
+		TotalPrice: order.TotalPrice,
+	}
+	return res, nil
 }

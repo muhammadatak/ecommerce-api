@@ -37,12 +37,12 @@ func (oa orderApi) Checkout(ctx fiber.Ctx) error {
 
 	req.UserId = userId
 
-	err = oa.orderService.Checkout(c, req)
+	res, err := oa.orderService.Checkout(c, req)
 
 	if err != nil {
 		return ctx.Status(errorStatus(err)).
 			JSON(dto.CreateResponseError(err.Error()))
 	}
 
-	return ctx.SendStatus(http.StatusCreated)
+	return ctx.Status(http.StatusCreated).JSON(dto.CreateResponseSuccess(res))
 }

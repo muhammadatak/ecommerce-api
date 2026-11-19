@@ -32,5 +32,5 @@ type OrderRepository interface {
 }
 
 type OrderService interface {
-	Checkout(ctx context.Context, req dto.CheckoutRequest) error
+	Checkout(ctx context.Context, req dto.CheckoutRequest) (dto.CheckoutResponses, error)
 }

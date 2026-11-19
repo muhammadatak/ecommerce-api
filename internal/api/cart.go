@@ -96,7 +96,7 @@ func (ca cartApi) UpdateItemQuantity(ctx fiber.Ctx) error {
 
 	id, err := uuid.Parse(ctx.Params("id"))
 	if err != nil {
-		return err
+		return ctx.Status(errorStatus(err)).JSON(dto.CreateResponseError(err.Error()))
 	}
 	req.Id = id.String()
 	userId, err := getUserId(ctx)
@@ -119,7 +119,7 @@ func (ca cartApi) DeleteItem(ctx fiber.Ctx) error {
 
 	id, err := uuid.Parse(ctx.Params("id"))
 	if err != nil {
-		return err
+		return ctx.Status(errorStatus(err)).JSON(dto.CreateResponseError(err.Error()))
 	}
 	userId, err := getUserId(ctx)
 	if err != nil {
