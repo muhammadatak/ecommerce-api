@@ -21,4 +21,5 @@ type CartItemRepository interface {
 	Save(ctx context.Context, item CartItem) error
 	Update(ctx context.Context, cart *CartItem) error
 	Delete(ctx context.Context, id string) error
+	DeleteByCartId(ctx context.Context, cartId string) error
 }

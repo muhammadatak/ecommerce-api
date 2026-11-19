@@ -82,3 +82,12 @@ func (c *cartItemRepository) Update(ctx context.Context, item *domain.CartItem) 
 	}
 	return nil
 }
+
+func (c *cartItemRepository) DeleteByCartId(ctx context.Context, cartId string) error {
+	executor := getExecutor(ctx, c.db).Delete("cart_items").Where(goqu.C("cart_id").Eq(cartId)).Executor()
+	_, err := executor.ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}

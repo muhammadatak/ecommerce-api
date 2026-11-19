@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +15,7 @@ type orderService struct {
 	cartRepository      domain.CartRepository
 	cartItemRepository  domain.CartItemRepository
 	productRepository   domain.ProductRepository
+	txRepository        domain.TxRepository
 }
 
 func NewOrder(
@@ -25,6 +24,7 @@ func NewOrder(
 	cartRepository domain.CartRepository,
 	cartItemRepository domain.CartItemRepository,
 	productRepository domain.ProductRepository,
+	txRepository domain.TxRepository,
 
 ) domain.OrderService {
 	return &orderService{
@@ -33,11 +33,12 @@ func NewOrder(
 		cartRepository:      cartRepository,
 		cartItemRepository:  cartItemRepository,
 		productRepository:   productRepository,
+		txRepository:        txRepository,
 	}
 }
 
 func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) error {
-	err := domain.RunInTransaction(ctx, o.orderRepository, func(txCtx context.Context) error {
+	return o.txRepository.WithTransaction(ctx, func(txCtx context.Context) error {
 		cart, err := o.cartRepository.FindByUserId(txCtx, req.UserId)
 		if err != nil {
 			return err
@@ -46,52 +47,37 @@ func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) er
 		if cart.Id == "" {
 			return domain.ErrNotFound
 		}
-		fmt.Printf("product = %s\n", cart.Id)
 
 		items, err := o.cartItemRepository.FindAllByCartId(txCtx, cart.Id)
-
 		if err != nil {
 			return err
 		}
 		if len(items) == 0 {
-			return errors.New("cart item empty")
+			return domain.ErrEmptyCartItem
 		}
-		fmt.Printf("item len = %v\n", len(items))
 
+		itemByProduct := make(map[string]domain.CartItem, 0)
 		productIds := make([]string, 0)
+
 		for _, v := range items {
+			itemByProduct[v.ProductId] = v
 			productIds = append(productIds, v.ProductId)
 		}
+
 		products, err := o.productRepository.FindByIds(txCtx, productIds)
-		for _, v := range products {
-			fmt.Printf("product = %s\n", v.Name)
-		}
 
 		if err != nil {
 			return err
 		}
-
-		// create order
-		newOrder := domain.Order{
-			Id:         uuid.NewString(),
-			UserId:     req.UserId,
-			Status:     domain.OrderStatusPending,
-			TotalPrice: 0,
-			CreatedAt:  time.Now(),
+		if len(products) != len(items) {
+			return domain.ErrNotFound
 		}
-		err = o.orderRepository.Save(txCtx, newOrder)
-		if err != nil {
-			return err
-		}
+		newOrderId := uuid.NewString()
+		orderItems := make([]domain.OrderItem, 0)
 		totalPrice := 0
 		// save to order item
 		for _, v := range products {
-			qtyItem, err := o.cartItemRepository.FindByCartAndProduct(txCtx, cart.Id, v.Id)
-
-			if err != nil {
-				return err
-			}
-			qty := qtyItem.Quantity
+			qty := itemByProduct[v.Id].Quantity
 
 			if qty > v.Stock {
 				return domain.ErrInsufficientStock
@@ -101,9 +87,9 @@ func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) er
 				return domain.ErrProductInactive
 			}
 
-			err = o.orderItemRepository.Save(txCtx, &domain.OrderItem{
+			orderItems = append(orderItems, domain.OrderItem{
 				Id:          uuid.NewString(),
-				OrderId:     newOrder.Id,
+				OrderId:     newOrderId,
 				ProductId:   v.Id,
 				ProductName: v.Name,
 				Price:       v.Price,
@@ -111,37 +97,39 @@ func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) er
 				Subtotal:    qty * v.Price,
 				CreatedAt:   time.Now(),
 			})
+			totalPrice += v.Price * qty
+		}
 
-			if err != nil {
-				return err
-			}
-			v.Stock = v.Stock - qty
+		err = o.orderRepository.Save(txCtx, domain.Order{
+			Id:         newOrderId,
+			UserId:     req.UserId,
+			Status:     domain.OrderStatusPending,
+			TotalPrice: totalPrice,
+			CreatedAt:  time.Now(),
+		})
+		if err != nil {
+			return err
+		}
+
+		// save item ke order
+		err = o.orderItemRepository.SaveBatch(txCtx, orderItems)
+		if err != nil {
+			return err
+		}
+
+		// minus stok produk by item quantity
+		for _, v := range products {
+			v.Stock -= itemByProduct[v.Id].Quantity
 			err = o.productRepository.Update(txCtx, &v)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%s stock = %v\n", v.Name, v.Stock)
-
-			totalPrice += v.Price * qty
-			fmt.Println("ok")
-			err = o.cartItemRepository.Delete(txCtx, qtyItem.Id)
-			if err != nil {
-				return err
-			}
 		}
 
-		newOrder = domain.Order{
-			Id:         newOrder.Id,
-			TotalPrice: totalPrice,
-		}
-		err = o.orderRepository.Update(txCtx, &newOrder)
+		err = o.cartItemRepository.DeleteByCartId(txCtx, cart.Id)
 		if err != nil {
 			return err
 		}
 		return nil
 	})
-	if err != nil {
-		return err
-	}
-	return nil
 }

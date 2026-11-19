@@ -45,7 +45,7 @@ func (p *productRepository) FindById(ctx context.Context, id string) (domain.Pro
 
 // FindByIds implements [domain.ProductRepository].
 func (p *productRepository) FindByIds(ctx context.Context, ids []string) ([]domain.Product, error) {
-	dataset := getExecutor(ctx, p.db).From("products").Where(goqu.C("id").Eq(ids)).ForUpdate(exp.Wait)
+	dataset := getExecutor(ctx, p.db).From("products").Where(goqu.C("id").Eq(ids)).Order(goqu.C("id").Asc()).ForUpdate(exp.Wait)
 	if len(ids) == 0 {
 		return []domain.Product{}, nil // tidak perlu query
 	}

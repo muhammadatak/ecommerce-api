@@ -20,4 +20,5 @@ type OrderItemRepository interface {
 	FindAllByOrderId(ctx context.Context, id string) ([]OrderItem, error)
 	Save(ctx context.Context, item *OrderItem) error
 	Delete(ctx context.Context, id string) error
+	SaveBatch(ctx context.Context, items []OrderItem) error
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/muhammadatak/go-ecommerce-api/domain"
 	"github.com/muhammadatak/go-ecommerce-api/dto"
-	"github.com/muhammadatak/go-ecommerce-api/internal/util"
 )
 
 type orderApi struct {
@@ -30,16 +29,6 @@ func (oa orderApi) Checkout(ctx fiber.Ctx) error {
 	defer cancel()
 
 	var req dto.CheckoutRequest
-	err := ctx.Bind().Body(&req)
-	if err != nil {
-		return ctx.Status(http.StatusBadRequest).
-			JSON(dto.CreateResponseError(err.Error()))
-	}
-
-	fails := util.Validate(req)
-	if len(fails) > 0 {
-		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseErrorData("Validation failed", fails))
-	}
 
 	userId, err := getUserId(ctx)
 	if err != nil {

@@ -18,7 +18,8 @@ func errorStatus(err error) int {
 	case errors.Is(err, domain.ErrAuth):
 		return http.StatusUnauthorized
 	case errors.Is(err, domain.ErrInsufficientStock),
-		errors.Is(err, domain.ErrProductInactive):
+		errors.Is(err, domain.ErrProductInactive),
+		errors.Is(err, domain.ErrEmptyCartItem):
 		return http.StatusBadRequest
 	case errors.Is(err, domain.ErrInvalidToken):
 		return http.StatusUnauthorized

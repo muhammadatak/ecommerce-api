@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/muhammadatak/go-ecommerce-api/domain"
 )
 
 type txContextKey struct{}
@@ -13,6 +15,21 @@ type dbExecutor interface {
 	Insert(table interface{}) *goqu.InsertDataset
 	Update(table interface{}) *goqu.UpdateDataset
 	Delete(table interface{}) *goqu.DeleteDataset
+}
+
+type txRepository struct {
+	db *goqu.Database
+}
+
+func NewTransactor(con *sql.DB) domain.TxRepository {
+	return &txRepository{
+		db: goqu.New("default", con),
+	}
+}
+
+// WithTransaction implements [domain.Transactor].
+func (t *txRepository) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	return withTransaction(ctx, t.db, fn)
 }
 
 func getExecutor(ctx context.Context, db *goqu.Database) dbExecutor {

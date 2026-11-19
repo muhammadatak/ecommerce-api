@@ -70,7 +70,8 @@ func (pa productApi) Show(ctx fiber.Ctx) error {
 
 	id, err := uuid.Parse(ctx.Params("id"))
 	if err != nil {
-		return err
+		return ctx.Status(http.StatusBadRequest).
+			JSON(dto.CreateResponseError(err.Error()))
 	}
 	res, err := pa.productService.Show(c, id.String())
 
@@ -96,7 +97,8 @@ func (pa productApi) Update(ctx fiber.Ctx) error {
 
 	id, err := uuid.Parse(ctx.Params("id"))
 	if err != nil {
-		return err
+		return ctx.Status(http.StatusBadRequest).
+			JSON(dto.CreateResponseError(err.Error()))
 	}
 	req.Id = id.String()
 	res, err := pa.productService.Update(c, req)
@@ -114,7 +116,8 @@ func (pa productApi) Delete(ctx fiber.Ctx) error {
 
 	id, err := uuid.Parse(ctx.Params("id"))
 	if err != nil {
-		return err
+		return ctx.Status(http.StatusBadRequest).
+			JSON(dto.CreateResponseError(err.Error()))
 	}
 	err = pa.productService.Delete(c, id.String())
 

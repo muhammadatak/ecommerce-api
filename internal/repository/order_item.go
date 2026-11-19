@@ -18,6 +18,17 @@ func NewOrderItem(con *sql.DB) domain.OrderItemRepository {
 	}
 }
 
+// SaveBatch implements [domain.OrderItemRepository].
+func (o *orderItemRepository) SaveBatch(ctx context.Context, items []domain.OrderItem) error {
+	executor := getExecutor(ctx, o.db).Insert("order_items").Rows(items).Executor()
+	_, err := executor.ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // FindAllByOrderId implements [domain.OrderItemRepository].
 func (o *orderItemRepository) FindAllByOrderId(ctx context.Context, orderId string) ([]domain.OrderItem, error) {
 	dataset := getExecutor(ctx, o.db).From("order_items").Where(goqu.C("order_id").Eq(orderId))
