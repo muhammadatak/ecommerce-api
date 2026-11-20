@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/muhammadatak/go-ecommerce-api/domain"
 )
 
@@ -22,6 +23,9 @@ func NewCart(con *sql.DB) domain.CartRepository {
 func (c *cartRepository) FindByUserId(ctx context.Context, userId string) (domain.Cart, error) {
 	dataset := getExecutor(ctx, c.db).From("carts").Where(goqu.C("user_id").Eq(userId))
 	var result domain.Cart
+	if isTx(ctx) {
+		dataset = dataset.ForUpdate(exp.Wait)
+	}
 	_, err := dataset.ScanStructContext(ctx, &result)
 	if err != nil {
 		return domain.Cart{}, err

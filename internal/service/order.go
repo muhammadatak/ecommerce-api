@@ -50,6 +50,7 @@ func (o *orderService) Index(ctx context.Context, userId string) ([]dto.OrderDat
 			Id:         v.Id,
 			Status:     v.Status,
 			TotalPrice: v.TotalPrice,
+			CreatedAt:  v.CreatedAt,
 		})
 	}
 	return orderData, nil
@@ -84,6 +85,7 @@ func (o *orderService) Show(ctx context.Context, id string, userId string) (dto.
 			Id:         order.Id,
 			Status:     order.Status,
 			TotalPrice: order.TotalPrice,
+			CreatedAt:  order.CreatedAt,
 		},
 		Items: itemData,
 	}, nil
@@ -193,6 +195,7 @@ func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) (d
 		Id:         order.Id,
 		Status:     order.Status,
 		TotalPrice: order.TotalPrice,
+		CreatedAt:  order.CreatedAt,
 	}
 	return res, nil
 }

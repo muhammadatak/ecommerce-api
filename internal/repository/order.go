@@ -26,7 +26,7 @@ func (o *orderRepository) WithTransaction(ctx context.Context, fn func(ctx conte
 }
 
 func (o *orderRepository) FindAllByUserId(ctx context.Context, userId string) ([]domain.Order, error) {
-	dataset := o.db.From("orders").Where(goqu.C("user_id").Eq(userId))
+	dataset := getExecutor(ctx, o.db).From("orders").Where(goqu.C("user_id").Eq(userId)).Order(goqu.C("created_at").Asc())
 	var result []domain.Order
 	err := dataset.ScanStructsContext(ctx, &result)
 	if err != nil {
@@ -37,7 +37,7 @@ func (o *orderRepository) FindAllByUserId(ctx context.Context, userId string) ([
 
 // FindByIdAndUserId implements [domain.OrderRepository].
 func (o *orderRepository) FindByIdAndUserId(ctx context.Context, id string, userId string) (domain.Order, error) {
-	dataset := o.db.From("orders").Where(goqu.C("id").Eq(id), goqu.C("user_id").Eq(userId))
+	dataset := getExecutor(ctx, o.db).From("orders").Where(goqu.C("id").Eq(id), goqu.C("user_id").Eq(userId))
 	var result domain.Order
 	_, err := dataset.ScanStructContext(ctx, &result)
 	if err != nil {

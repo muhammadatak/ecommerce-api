@@ -1,13 +1,16 @@
 package dto
 
+import "time"
+
 type CheckoutRequest struct {
 	UserId string `json:"-"`
 }
 
 type OrderData struct {
-	Id         string `json:"id"`
-	Status     string `json:"status"`
-	TotalPrice int    `json:"total_price"`
+	Id         string    `json:"id"`
+	Status     string    `json:"status"`
+	TotalPrice int       `json:"total_price"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type OrderItem struct {
