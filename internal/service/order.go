@@ -37,7 +37,59 @@ func NewOrder(
 	}
 }
 
-func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) (dto.CheckoutResponses, error) {
+// Index implements [domain.OrderService].
+func (o *orderService) Index(ctx context.Context, userId string) ([]dto.OrderData, error) {
+	orders, err := o.orderRepository.FindAllByUserId(ctx, userId)
+	if err != nil {
+		return []dto.OrderData{}, err
+	}
+
+	orderData := make([]dto.OrderData, 0)
+	for _, v := range orders {
+		orderData = append(orderData, dto.OrderData{
+			Id:         v.Id,
+			Status:     v.Status,
+			TotalPrice: v.TotalPrice,
+		})
+	}
+	return orderData, nil
+}
+
+// Show implements [domain.OrderService].
+func (o *orderService) Show(ctx context.Context, id string, userId string) (dto.OrderDetail, error) {
+	order, err := o.orderRepository.FindByIdAndUserId(ctx, id, userId)
+	if err != nil {
+		return dto.OrderDetail{}, err
+	}
+	if order.Id == "" {
+		return dto.OrderDetail{}, domain.ErrNotFound
+	}
+
+	items, err := o.orderItemRepository.FindAllByOrderId(ctx, order.Id)
+	if err != nil {
+		return dto.OrderDetail{}, err
+	}
+	itemData := make([]dto.OrderItem, 0)
+	for _, v := range items {
+		itemData = append(itemData, dto.OrderItem{
+			ProductName: v.ProductName,
+			Price:       v.Price,
+			Quantity:    v.Quantity,
+			Subtotal:    v.Subtotal,
+		})
+	}
+
+	return dto.OrderDetail{
+		Order: dto.OrderData{
+			Id:         order.Id,
+			Status:     order.Status,
+			TotalPrice: order.TotalPrice,
+		},
+		Items: itemData,
+	}, nil
+}
+
+func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) (dto.OrderData, error) {
 	var order domain.Order
 	err := o.txRepository.WithTransaction(ctx, func(txCtx context.Context) error {
 		cart, err := o.cartRepository.FindByUserId(txCtx, req.UserId)
@@ -135,9 +187,9 @@ func (o *orderService) Checkout(ctx context.Context, req dto.CheckoutRequest) (d
 		return nil
 	})
 	if err != nil {
-		return dto.CheckoutResponses{}, err
+		return dto.OrderData{}, err
 	}
-	res := dto.CheckoutResponses{
+	res := dto.OrderData{
 		Id:         order.Id,
 		Status:     order.Status,
 		TotalPrice: order.TotalPrice,
